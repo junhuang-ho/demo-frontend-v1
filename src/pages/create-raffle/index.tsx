@@ -87,7 +87,18 @@ const CreateRaffle = () => {
             },
           ],
         });
-        const data = data_[0];
+        const data = data_[0] as {
+          tsEnd: number;
+          maxTickets: number;
+          maxTicketsPerAddress: number;
+          price: BigNumber;
+          token: Address;
+          prizeToken: Address;
+          prizeNFT: Address;
+          amount: BigNumber;
+          item: number;
+          ticketsBought: number;
+        };
 
         raffles.push({
           raffleId: raffleId[0] as string,
