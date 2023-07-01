@@ -39,7 +39,7 @@ const WalletProvider = ({ children }: { children: ReactNode }) => {
     [zkSyncTestnet],
     [
       alchemyProvider({
-        apiKey: env.NEXT_PUBLIC_ALCHEMY_API_KEY_CLIENT,
+        apiKey: "04dmiHrTn8_XEANXUuETMZsNSuZag8ii", //env.NEXT_PUBLIC_ALCHEMY_API_KEY_CLIENT,
       }), // TODO: key exposed, make sure whitelist on alchemy dashboard!!
       publicProvider(),
     ]
