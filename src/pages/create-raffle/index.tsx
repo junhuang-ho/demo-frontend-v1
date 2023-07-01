@@ -90,7 +90,7 @@ const CreateRaffle = () => {
         const data = data_[0];
 
         raffles.push({
-          raffleId: raffleId[0],
+          raffleId: raffleId[0] as string,
           tsEnd: data[0]?.toNumber(),
           maxTickets: data[1]?.toNumber(),
           maxTicketsPerAddress: data[2]?.toNumber(),
