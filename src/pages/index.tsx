@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { ethers, type BigNumber } from "ethers";
 import { readContracts, type Address } from "wagmi";
 import { prepareWriteContract, writeContract } from "@wagmi/core";
@@ -47,18 +48,18 @@ export default function Home() {
           },
         ],
       });
-      const data = data_[0] as {
-        tsEnd: number;
-        maxTickets: number;
-        maxTicketsPerAddress: number;
-        price: BigNumber;
-        token: Address;
-        prizeToken: Address;
-        prizeNFT: Address;
-        amount: BigNumber;
-        item: number;
-        ticketsBought: number;
-      };
+      const data = data_[0] as [
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        BigNumber,
+        BigNumber
+      ];
       if (!data) return;
 
       setRaffle({
@@ -67,9 +68,9 @@ export default function Home() {
         maxTickets: data[1]?.toNumber(),
         maxTicketsPerAddress: data[2]?.toNumber(),
         price: data[3],
-        token: data[4]?.toString(),
-        prizeToken: data[5]?.toString(),
-        prizeNFT: data[6]?.toString(),
+        token: data[4]?.toString() as Address,
+        prizeToken: data[5]?.toString() as Address,
+        prizeNFT: data[6]?.toString() as Address,
         amount: data[7],
         item: data[8]?.toNumber(),
         ticketsBought: data[9]?.toNumber(),

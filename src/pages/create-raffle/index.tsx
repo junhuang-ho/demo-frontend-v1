@@ -87,18 +87,19 @@ const CreateRaffle = () => {
             },
           ],
         });
-        const data = data_[0] as {
-          tsEnd: number;
-          maxTickets: number;
-          maxTicketsPerAddress: number;
-          price: BigNumber;
-          token: Address;
-          prizeToken: Address;
-          prizeNFT: Address;
-          amount: BigNumber;
-          item: number;
-          ticketsBought: number;
-        };
+        const data = data_[0] as [
+          BigNumber,
+          BigNumber,
+          BigNumber,
+          BigNumber,
+          BigNumber,
+          BigNumber,
+          BigNumber,
+          BigNumber,
+          BigNumber,
+          BigNumber
+        ];
+        if (!data) return;
 
         raffles.push({
           raffleId: raffleId[0] as string,
@@ -106,9 +107,9 @@ const CreateRaffle = () => {
           maxTickets: data[1]?.toNumber(),
           maxTicketsPerAddress: data[2]?.toNumber(),
           price: data[3],
-          token: data[4]?.toString(),
-          prizeToken: data[5]?.toString(),
-          prizeNFT: data[6]?.toString(),
+          token: data[4]?.toString() as Address,
+          prizeToken: data[5]?.toString() as Address,
+          prizeNFT: data[6]?.toString() as Address,
           amount: data[7],
           item: data[8]?.toNumber(),
           ticketsBought: data[9]?.toNumber(),
@@ -278,7 +279,7 @@ const CreateRaffle = () => {
       <Box>3. mint many dummy token</Box>
       <Box>4. mint many dummy NFT</Box>
       <Box>5. approve prize token, fixed 30</Box>
-      <Box>6. set nft's index as prize</Box>
+      <Box>6. set nfts index as prize</Box>
       <Box>
         7. approve prize nft, fixed to 1 nft as prize per raffle (if this button
         disabled means u dont own that nft)
@@ -289,8 +290,8 @@ const CreateRaffle = () => {
         button to be enabled)
       </Box>
       <Box>
-        9. raffle details will display below, and can only end after the "Ends
-        On" datetime
+        9. raffle details will display below, and can only end after the -Ends
+        On- datetime
       </Box>
       <Box>-----------------------------------</Box>
       <Box>
