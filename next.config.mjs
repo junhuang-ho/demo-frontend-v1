@@ -18,6 +18,7 @@ const config = {
     locales: ["en"],
     defaultLocale: "en",
   },
+  output: "export",
   basePath: "/nextjs-github-pages",
   images: {
     unoptimized: true,
