@@ -207,6 +207,12 @@ export default function Home() {
           </Button>
         </Stack>
       </Stack>
+
+      <Box>INSTRUCTION</Box>
+      <Box>1. approve before enter raffle</Box>
+      <Box>
+        2. host addr, raffleID, and no. tickets are required to enter raffle
+      </Box>
     </Stack>
   );
 }
