@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useIdle } from "@mantine/hooks";
 import {
   useAccount,
+  useSigner,
   useContractRead,
   usePrepareContractWrite,
   useContractWrite,
@@ -20,6 +21,8 @@ import {
 } from "~/constants/common";
 
 import { Box, Stack, Button, TextField } from "@mui/material";
+
+import { multicall } from "@argent/era-multicall"; // ref: https://docs.argent.xyz/zksync-era/multicalls
 
 export type Raffle = {
   raffleId: string;
@@ -38,7 +41,108 @@ export type Raffle = {
 const CreateRaffle = () => {
   const isIdle = useIdle(1_000 * 20);
   const { address: addressWallet } = useAccount();
-  const [nftIndex, setNFTIndex] = useState<number | undefined>(undefined);
+  const { data: signer } = useSigner();
+
+  const [raffleDuration, setRaffleDuration] = useState<number>(600);
+  const [maxTickets, setMaxTickets] = useState<number>(1000);
+  const [maxTicketsPerAddr, setMaxTicketsPerAddr] = useState<number>(100);
+  const [ticketPrice, setTicketPrice] = useState<string>("1000000000000000000");
+  const [ticketToken, setTicketToken] = useState<string>(ADDRESS_NATIVE_TOKEN);
+
+  const [prizeToken, setPrizeToken] = useState<string>(ADDRESS_DUMMY_TOKEN);
+  const [prizeTokenAmt, setPrizeTokenAmt] = useState<string>(
+    "1000000000000000000"
+  );
+  const [prizeNFT, setPrizeNFT] = useState<string>(ADDRESS_DUMMY_NFT);
+  const [prizeNFTIndex, setPrizeNFTIndex] = useState<number>(0);
+
+  const [isProcessingRaffle, setIsProcessingRaffle] = useState<boolean>(false);
+
+  const [calls, setCalls] = useState<any[]>([]);
+  useEffect(() => {
+    const run = async () => {
+      if (
+        !signer ||
+        raffleDuration <= 0 ||
+        maxTickets <= 0 ||
+        maxTicketsPerAddr <= 0 ||
+        !ethers.utils.isAddress(ticketToken) ||
+        !ethers.utils.isAddress(prizeToken) ||
+        !ethers.utils.isAddress(prizeNFT)
+      ) {
+        console.log("err3");
+        setCalls([]);
+        return;
+      }
+
+      const ctPrizeToken = new ethers.Contract(
+        prizeToken,
+        [
+          "function approve(address spender, uint256 amount) public returns (bool)",
+        ],
+        signer
+      );
+      const ctPrizeNFT = new ethers.Contract(
+        prizeNFT,
+        [
+          "function approve(address spender, uint256 amount) public returns (bool)",
+        ],
+        signer
+      );
+      const raffleContract = new ethers.Contract(
+        ADDRESS_RAFFLE,
+        [
+          "function startRaffle(uint256 _duration,uint256 _maxTickets,uint256 _maxTicketsPerAddress,uint256 _price,address _token,address _prizeToken, address _prizeNFT, uint256 _amount,uint256 _item ) external",
+        ],
+        signer
+      );
+
+      if (
+        ctPrizeToken.populateTransaction.approve === undefined ||
+        ctPrizeNFT.populateTransaction.approve === undefined ||
+        raffleContract.populateTransaction.startRaffle === undefined
+      )
+        return;
+      let calls: any[] = [];
+      calls = [
+        await ctPrizeToken.populateTransaction.approve(
+          ADDRESS_RAFFLE,
+          prizeTokenAmt
+        ),
+        await ctPrizeNFT.populateTransaction.approve(
+          ADDRESS_RAFFLE,
+          prizeNFTIndex
+        ),
+        await raffleContract.populateTransaction.startRaffle(
+          raffleDuration,
+          maxTickets,
+          maxTicketsPerAddr,
+          ticketPrice,
+          ticketToken,
+          prizeToken,
+          prizeNFT,
+          prizeTokenAmt,
+          prizeNFTIndex
+        ),
+      ];
+
+      setCalls(calls);
+    };
+    void run();
+  }, [
+    signer,
+    prizeToken,
+    prizeNFT,
+    ticketToken,
+    ticketPrice,
+    prizeTokenAmt,
+    prizeNFTIndex,
+    raffleDuration,
+    maxTickets,
+    maxTicketsPerAddr,
+  ]);
+
+  /////
 
   const { data: raffleSize_ } = useContractRead({
     address: ADDRESS_RAFFLE,
@@ -120,179 +224,144 @@ const CreateRaffle = () => {
     void run();
   }, [addressWallet, raffleSize]);
 
-  const [isWritingApprovePrizeToken, setIsWritingApprovePrizeToken] =
-    useState<boolean>(false);
-  const { config: configApprovePrizeToken } = usePrepareContractWrite({
-    address: ADDRESS_DUMMY_TOKEN,
-    abi: [
-      "function approve(address spender, uint256 amount) public returns (bool)",
-    ],
-    functionName: "approve",
-    args: [ADDRESS_RAFFLE, ethers.utils.parseEther("30")],
-    enabled: addressWallet !== undefined,
-  });
-  const {
-    data: dataApprovePrizeToken,
-    isLoading: isLoadingApprovePrizeToken,
-    writeAsync: approvePrizeToken,
-  } = useContractWrite({
-    ...configApprovePrizeToken,
-    onSuccess: () => {
-      setIsWritingApprovePrizeToken(true);
-    },
-  });
-  useWaitForTransaction({
-    hash: dataApprovePrizeToken?.hash,
-    onSuccess: (receipt) => {
-      setIsWritingApprovePrizeToken(false);
-    },
-  });
-  const isProcessingApprovePrizeToken =
-    isLoadingApprovePrizeToken || isWritingApprovePrizeToken;
-
-  const [isWritingApprovePrizeNFT, setIsWritingApprovePrizeNFT] =
-    useState<boolean>(false);
-  const { config: configApprovePrizeNFT } = usePrepareContractWrite({
-    address: ADDRESS_DUMMY_NFT,
-    abi: ["function approve(address to, uint256 tokenId) external"],
-    functionName: "approve",
-    args: [ADDRESS_RAFFLE, nftIndex],
-    enabled: addressWallet !== undefined && nftIndex !== undefined,
-  });
-  const {
-    data: dataApprovePrizeNFT,
-    isLoading: isLoadingApprovePrizeNFT,
-    writeAsync: approvePrizeNFT,
-  } = useContractWrite({
-    ...configApprovePrizeNFT,
-    onSuccess: () => {
-      setIsWritingApprovePrizeNFT(true);
-    },
-  });
-  useWaitForTransaction({
-    hash: dataApprovePrizeNFT?.hash,
-    onSuccess: (receipt) => {
-      setIsWritingApprovePrizeNFT(false);
-    },
-  });
-  const isProcessingApprovePrizeNFT =
-    isLoadingApprovePrizeNFT || isWritingApprovePrizeNFT;
-
-  const [isWriting, setIsWriting] = useState<boolean>(false);
-  const { config } = usePrepareContractWrite({
-    address: ADDRESS_RAFFLE,
-    abi: [
-      "function startRaffle(uint256 _duration,uint256 _maxTickets,uint256 _maxTicketsPerAddress,uint256 _price,address _token,address _prizeToken, address _prizeNFT, uint256 _amount,uint256 _item ) external",
-    ],
-    functionName: "startRaffle",
-    args: [
-      60 * 10,
-      10,
-      8,
-      ethers.utils.parseEther("1"),
-      ADDRESS_NATIVE_TOKEN,
-      ADDRESS_DUMMY_TOKEN,
-      ADDRESS_DUMMY_NFT,
-      ethers.utils.parseEther("30"),
-      nftIndex,
-    ],
-    enabled: addressWallet !== undefined && nftIndex !== undefined,
-  });
-  const {
-    data,
-    isLoading,
-    writeAsync: startRaffle,
-  } = useContractWrite({
-    ...config,
-    onSuccess: () => {
-      setIsWriting(true);
-    },
-  });
-  useWaitForTransaction({
-    hash: data?.hash,
-    onSuccess: (receipt) => {
-      setIsWriting(false);
-    },
-  });
-  const isProcessing = isLoading || isWriting;
-
   return (
     <Stack alignItems="center" justifyContent="center" spacing={2}>
       <Box>--- Create Raffle ---</Box>
-      {/* <Box>total NFTs: {nftBal}</Box> */}
+      <Box>Reference Addresses</Box>
+      <Stack>
+        <Stack direction="row" spacing={1}>
+          <Box>Native:</Box>
+          <Box sx={{ color: "green" }}>{ADDRESS_NATIVE_TOKEN}</Box>
+        </Stack>
+        <Stack direction="row" spacing={1}>
+          <Box>dToken:</Box>
+          <Box sx={{ color: "green" }}>{ADDRESS_DUMMY_TOKEN}</Box>
+        </Stack>
+        <Stack direction="row" spacing={1}>
+          <Box>dNFT:</Box>
+          <Box sx={{ color: "green" }}>{ADDRESS_DUMMY_NFT}</Box>
+        </Stack>
+      </Stack>
+      <Box>NOTE: Boxes in RED are fixed for now, their value is 1</Box>
+      <Box sx={{ pt: 2, fontWeight: "bold" }}>Part 1 - Set Raffle Details</Box>
       <Stack direction="row" spacing={1}>
-        <Button
-          variant="contained"
-          disabled={
-            !approvePrizeToken ||
-            isProcessing ||
-            isProcessingApprovePrizeToken ||
-            isProcessingApprovePrizeNFT
-          }
-          onClick={async () => {
-            await approvePrizeToken?.();
-          }}
-        >
-          Approve Prize Token (30)
-        </Button>
         <TextField
-          label="NFT index (number only)"
-          value={nftIndex ? nftIndex : ""}
+          label="Raffle Duration (seconds)"
+          value={raffleDuration}
           onChange={(event) => {
             const value = event.target.value;
-
-            setNFTIndex(Number(value));
+            if (isNaN(Number(value))) return;
+            setRaffleDuration(Number(value));
           }}
         />
-        <Button
-          variant="contained"
-          disabled={
-            !approvePrizeNFT ||
-            isProcessing ||
-            isProcessingApprovePrizeToken ||
-            isProcessingApprovePrizeNFT
-          }
-          onClick={async () => {
-            await approvePrizeNFT?.();
+        <TextField
+          label="Max Tickets"
+          value={maxTickets}
+          onChange={(event) => {
+            const value = event.target.value;
+            if (isNaN(Number(value))) return;
+            setMaxTickets(Number(value));
           }}
-        >
-          Approve Prize NFT
-        </Button>
-        <Button
-          variant="contained"
-          disabled={
-            !startRaffle ||
-            isProcessing ||
-            isProcessingApprovePrizeToken ||
-            isProcessingApprovePrizeNFT
-          }
-          onClick={async () => {
-            await startRaffle?.();
+        />
+        <TextField
+          label="Max Tickets Per Address"
+          value={maxTicketsPerAddr}
+          onChange={(event) => {
+            const value = event.target.value;
+            if (isNaN(Number(value))) return;
+            setMaxTicketsPerAddr(Number(value));
           }}
-        >
-          Start Raffle
-        </Button>
+        />
       </Stack>
-      <Box>INSTRUCTIONS</Box>
-      <Box>1. get license (see license expiry datetime)</Box>
-      <Box>2. mint many nativetoken, click button few times</Box>
-      <Box>3. mint many dummy token</Box>
-      <Box>4. mint many dummy NFT</Box>
-      <Box>5. approve prize token, fixed 30</Box>
-      <Box>6. set nfts index as prize</Box>
+      <Stack direction="row" spacing={1}>
+        <TextField
+          label="Tickets Price (wei)"
+          value={ticketPrice}
+          //   onChange={(event) => {
+          //     const value = event.target.value;
+          //     if (isNaN(Number(value))) return;
+          //     setTicketPrice(Number(value));
+          //   }}
+          error={true}
+        />
+        <TextField
+          label="Tickets Token (address)"
+          value={ticketToken}
+          onChange={(event) => {
+            const value = event.target.value;
+            setTicketToken(value);
+          }}
+        />
+      </Stack>
+      <Box sx={{ pt: 2, fontWeight: "bold" }}>Part 2 - Set Prizes</Box>
+      <Stack direction="row" spacing={1}>
+        <Stack spacing={1}>
+          <TextField
+            label="Token (address)"
+            value={prizeToken}
+            onChange={(event) => {
+              const value = event.target.value;
+              setPrizeToken(value);
+            }}
+          />
+          <TextField
+            label="Token Amount (wei)"
+            value={prizeTokenAmt}
+            // onChange={(event) => {
+            //   const value = event.target.value;
+            //   if (isNaN(Number(value))) return;
+            //   setPrizeTokenAmt(Number(value));
+            // }}
+            error={true}
+          />
+        </Stack>
+        <Stack spacing={1}>
+          <TextField
+            label="NFT (address)"
+            value={prizeNFT}
+            onChange={(event) => {
+              const value = event.target.value;
+              setPrizeNFT(value);
+            }}
+          />
+          <TextField
+            label="NFT Index"
+            value={prizeNFTIndex}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (isNaN(Number(value))) return;
+              setPrizeNFTIndex(Number(value));
+            }}
+          />
+        </Stack>
+      </Stack>
+      <Box>(for this demo, both token and nft are required)</Box>
+      <Box>-----------------------------------</Box>
       <Box>
-        7. approve prize nft, fixed to 1 nft as prize per raffle (if this button
-        disabled means u dont own that nft)
+        (For inputs in -wei-, setting too big value will make input become
+        infinity. This is known bug just set lower number like 10 ether in wei)
       </Box>
-      <Box>
-        8. start raffle (if this is disabled, u might need refresh page, but rmb
-        to input the nft index again to what was approved for start raffle
-        button to be enabled)
-      </Box>
-      <Box>
-        9. raffle details will display below, and can only end after the -Ends
-        On- datetime
-      </Box>
+      <Button
+        variant="contained"
+        disabled={
+          (calls !== undefined && calls?.length <= 0) || isProcessingRaffle
+        }
+        onClick={async () => {
+          if (!signer || calls?.length <= 0) return;
+
+          try {
+            setIsProcessingRaffle(true);
+            // eslint-disable-next-line
+            const results = await multicall(signer, calls);
+          } catch (error) {
+            setIsProcessingRaffle(false);
+            console.error("ERROR RAFFLE");
+          }
+          setIsProcessingRaffle(false);
+        }}
+      >
+        Confirm and Start Raffle
+      </Button>
       <Box>-----------------------------------</Box>
       <Box>
         {raffles.map((raffle) => (
@@ -324,7 +393,7 @@ const CreateRaffle = () => {
                   args: [
                     addressWallet,
                     raffle.raffleId,
-                    Math.floor(Math.random() * 99999),
+                    Math.floor(Math.random() * 9999),
                   ],
                 });
                 const data = await writeContract(config);
@@ -341,3 +410,6 @@ const CreateRaffle = () => {
 };
 
 export default CreateRaffle;
+
+// TODO: convert those wei inputs to string otherwise bignumber error --> overflow
+// TODO: add back raffle viewer, see indexold.tsx

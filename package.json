@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@argent/era-multicall": "^0.1.0",
     "@emotion/react": "^11.10.8",
     "@emotion/styled": "^11.10.8",
     "@mantine/hooks": "^6.0.9",

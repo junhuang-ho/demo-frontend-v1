@@ -7,6 +7,13 @@
   resolved "https://registry.yarnpkg.com/@aashutoshrathi/word-wrap/-/word-wrap-1.2.6.tgz#bd9154aec9983f77b3a034ecaa015c2e4201f6cf"
   integrity sha512-1Yjs2SvM8TflER/OD3cOjhWWOZb58A2t7wpE2S9XfBYTiIl+XFhQG2bjy4Pu1I+EAlCNUzRDYDdFwFYUKvXcIA==
 
+"@argent/era-multicall@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@argent/era-multicall/-/era-multicall-0.1.0.tgz#c54e0f96f2654653bd572a23ddbae413f2827fe8"
+  integrity sha512-WPVdNvzJWS6wo7iI0YusToJ6iUCWYHupFxNIy27ctCbmhJ225MGNUwLn7+wnqVLWbS9R3PgxawAWZvtsvcyeLA==
+  dependencies:
+    ethers "^5"
+
 "@babel/code-frame@^7.0.0":
   version "7.22.5"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.22.5.tgz#234d98e1551960604f1246e6475891a570ad5658"
@@ -2779,7 +2786,7 @@ eth-rpc-errors@^4.0.2:
   dependencies:
     fast-safe-stringify "^2.0.6"
 
-ethers@^5.7.2:
+ethers@^5, ethers@^5.7.2:
   version "5.7.2"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.7.2.tgz#3a7deeabbb8c030d4126b24f84e525466145872e"
   integrity sha512-wswUsmWo1aOK8rR7DIKiWSw9DbLWe6x98Jrn8wcTflTVvaXhAMaB5zGAXy0GYQEQp9iO1iSHWVyARQm11zUtyg==

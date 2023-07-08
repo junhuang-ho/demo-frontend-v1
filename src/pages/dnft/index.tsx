@@ -37,32 +37,6 @@ const DummyNFT = () => {
   });
   const nftBal = dataBal ? Number(dataBal) : 0;
 
-  //   const [nfts, setNFTs] = useState<number[]>([]);
-  //   useEffect(() => {
-  //     const run = async () => {
-  //       if (!addressWallet) return;
-
-  //       const nfts = [];
-  //       for (let i = 0; i < nftBal; i++) {
-  //         const data = await readContracts({
-  //           contracts: [
-  //             {
-  //               address: ADDRESS_DUMMY_NFT,
-  //               abi: [
-  //                 "function nfts(address _user, uint256 _index) external view returns (uint256)",
-  //               ],
-  //               functionName: "nfts",
-  //               args: [addressWallet, i],
-  //             },
-  //           ],
-  //         });
-  //         nfts.push(Number(data));
-  //       }
-  //       setNFTs(nfts);
-  //     };
-  //     void run();
-  //   }, [addressWallet, nftBal]);
-
   const [isWriting, setIsWriting] = useState<boolean>(false);
   const { config } = usePrepareContractWrite({
     address: ADDRESS_DUMMY_NFT,
@@ -109,10 +83,38 @@ const DummyNFT = () => {
     void run();
   }, [nftIndex]);
 
+  const [nftsOwned, setNFTsOwned] = useState<number[]>([]);
+  useEffect(() => {
+    const run = async () => {
+      if (!addressWallet) return;
+      const nftsOwned = [];
+      for (let i = 0; i < 100; i++) {
+        try {
+          const owner = (await readContract({
+            address: ADDRESS_DUMMY_NFT,
+            abi: [
+              "function ownerOf(uint256 tokenId) external view returns (address owner)",
+            ],
+            functionName: "ownerOf",
+            args: [i],
+          })) as Address;
+          console.log(owner === addressWallet, "yoyo");
+          if (owner === addressWallet) {
+            nftsOwned.push(i);
+          }
+        } catch {}
+      }
+      setNFTsOwned(nftsOwned);
+    };
+    void run();
+  }, [addressWallet]);
+
   return (
     <Stack alignItems="center" justifyContent="center" spacing={2}>
       <Box>--- Dummy NFT ---</Box>
+      <Box sx={{ color: "green" }}>{ADDRESS_DUMMY_NFT}</Box>
       <Box>total NFTs: {nftBal}</Box>
+      <Box>{JSON.stringify(nftsOwned)}</Box>
       <TextField
         label="enter token index"
         value={nftIndex}

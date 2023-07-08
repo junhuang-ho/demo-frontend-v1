@@ -55,6 +55,7 @@ const DummyToken = () => {
   return (
     <Stack alignItems="center" justifyContent="center" spacing={2}>
       <Box>--- Dummy Token ---</Box>
+      <Box sx={{ color: "green" }}>{ADDRESS_DUMMY_TOKEN}</Box>
       <Box>
         {balance} {symbol}
       </Box>
